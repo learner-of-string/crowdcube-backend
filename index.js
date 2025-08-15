@@ -27,6 +27,25 @@ async function run() {
 
         const database = client.db(`crowdcubeDB`);
         const usersCollection = database.collection(`users`);
+        const campaignsCollection = database.collection(`campaigns`);
+
+        // campaign related api
+
+        app.post("/add-new-campaign", async (req, res) => {
+            const newCampaign = req.body;
+            newCampaign.whatsapp = true;
+            console.log("Creating new campaign", newCampaign);
+            const result = await campaignsCollection.insertOne(newCampaign);
+            res.send(result);
+        });
+
+        // users related api
+        app.get("/users/:email", async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        });
 
         app.post("/users", async (req, res) => {
             const newUser = req.body;
