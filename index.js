@@ -9,6 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const { ObjectId } = require("mongodb");
 const uri = process.env.mongoURI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -31,26 +32,41 @@ async function run() {
 
         // campaign related api
 
+        app.get("/campaigns", async (req, res) => {
+            const cursor = campaignsCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        app.get("/running-campaigns", async (req, res) => {
+            const cursor = campaignsCollection.find({
+                closingDate: { $gte: new Date() },
+            });
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        app.get("/campaign-by/:email", async (req, res) => {
+            const creatorEmail = req.params.email;
+            const result = await campaignsCollection
+                .find({ creatorEmail })
+                .toArray();
+            res.send(result);
+        });
+
+        app.get("/campaigns/:id", async (req, res) => {
+            const campaignId = req.params.id;
+            const result = await campaignsCollection.findOne({
+                _id: new ObjectId(campaignId),
+            });
+            res.send(result);
+        });
+
         app.post("/add-new-campaign", async (req, res) => {
             const newCampaign = req.body;
-            newCampaign.whatsapp = true;
-            console.log("Creating new campaign", newCampaign);
+            newCampaign.startingDate = new Date(newCampaign.startingDate);
+            newCampaign.closingDate = new Date(newCampaign.closingDate);
             const result = await campaignsCollection.insertOne(newCampaign);
-            res.send(result);
-        });
-
-        // users related api
-        app.get("/users/:email", async (req, res) => {
-            const email = req.params.email;
-            const query = { email };
-            const result = await usersCollection.findOne(query);
-            res.send(result);
-        });
-
-        app.post("/users", async (req, res) => {
-            const newUser = req.body;
-            console.log("creating new user: ", newUser);
-            const result = await usersCollection.insertOne(newUser);
             res.send(result);
         });
 
