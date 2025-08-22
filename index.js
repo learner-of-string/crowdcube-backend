@@ -27,10 +27,7 @@ async function run() {
         await client.connect();
 
         const database = client.db(`crowdcubeDB`);
-        const usersCollection = database.collection(`users`);
         const campaignsCollection = database.collection(`campaigns`);
-
-        // campaign related api
 
         app.get("/campaigns", async (req, res) => {
             const cursor = campaignsCollection.find();
@@ -39,10 +36,11 @@ async function run() {
         });
 
         app.get("/running-campaigns", async (req, res) => {
-            const cursor = campaignsCollection.find({
-                closingDate: { $gte: new Date() },
-            });
-            const result = await cursor.toArray();
+            const cursor = campaignsCollection.find();
+            const allCampaigns = await cursor.toArray();
+            const result = allCampaigns.filter(
+                (eachOne) => new Date(eachOne.closingDate) >= new Date()
+            );
             res.send(result);
         });
 
@@ -55,9 +53,9 @@ async function run() {
         });
 
         app.get("/campaigns/:id", async (req, res) => {
-            const campaignId = req.params.id;
+            const id = req.params.id;
             const result = await campaignsCollection.findOne({
-                _id: new ObjectId(campaignId),
+                _id: new ObjectId(id),
             });
             res.send(result);
         });
@@ -67,6 +65,47 @@ async function run() {
             newCampaign.startingDate = new Date(newCampaign.startingDate);
             newCampaign.closingDate = new Date(newCampaign.closingDate);
             const result = await campaignsCollection.insertOne(newCampaign);
+            res.send(result);
+        });
+
+        app.put("/campaigns/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const campaign = req.body;
+            const editedCampaign = {
+                $set: {
+                    campaignName: campaign?.campaignName,
+                    closingDate: campaign?.closingDate,
+                    creatorEmail: campaign?.creatorEmail,
+                    creatorName: campaign?.creatorName,
+                    description: campaign?.description,
+                    goalAmount: campaign?.goalAmount,
+                    location: campaign?.location,
+                    phoneNumber: campaign?.phoneNumber,
+                    photoURL: campaign?.photoURL,
+                    startingDate: campaign?.startingDate,
+                },
+            };
+            const result = await campaignsCollection.updateOne(
+                filter,
+                editedCampaign,
+                options
+            );
+
+            res.send(result);
+        });
+
+        app.patch("/update-collected", async (req, res) => {
+            const { id, amount } = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $inc: { collectedTillNow: Number(amount) },
+            };
+            const result = await campaignsCollection.updateOne(
+                filter,
+                updateDoc
+            );
             res.send(result);
         });
 
@@ -87,5 +126,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Crowd is cubing in the port of ${port}`);
+    console.log(`Crowd is cubing in the port of ${port} at ${new Date()}`);
 });
