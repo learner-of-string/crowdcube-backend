@@ -100,12 +100,19 @@ async function run() {
             const { id, amount } = req.body;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
-                $inc: { collectedTillNow: Number(amount) },
+                $inc: { collectedYet: Number(amount) },
             };
             const result = await campaignsCollection.updateOne(
                 filter,
                 updateDoc
             );
+            res.send(result);
+        });
+
+        app.delete("/campaigns", async (req, res) => {
+            const id = req.body.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await campaignsCollection.deleteOne(query);
             res.send(result);
         });
 
