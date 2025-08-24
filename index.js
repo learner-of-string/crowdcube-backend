@@ -85,6 +85,8 @@ async function run() {
                     phoneNumber: campaign?.phoneNumber,
                     photoURL: campaign?.photoURL,
                     startingDate: campaign?.startingDate,
+                    minAmount: campaign?.minAmount,
+                    campaignType: campaign?.campaignType,
                 },
             };
             const result = await campaignsCollection.updateOne(
